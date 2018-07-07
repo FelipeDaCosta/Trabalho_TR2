@@ -20,21 +20,9 @@ bool TCP_Client::connectToHost(std::string hostName) {
         std::cerr << "Erro na tentativa de resolucao do host: " << hostName << std::endl;
         return false;
     }
-        struct in_addr **addr_list;
-
          
-        //Cast the h_addr_list to in_addr , since h_addr_list also has the ip address in long format only
-        addr_list = (struct in_addr **) hostServer->h_addr_list;
- 
-        for(int i = 0; addr_list[i] != NULL; i++)
-        {
-            //strcpy(ip , inet_ntoa(*addr_list[i]) );
-            server_addr.sin_addr = *addr_list[i];
-             
-            std::cout<<hostName<<" resolved to "<<inet_ntoa(*addr_list[i])<<std::endl;
-             
-            break;
-        }
+    //Cast the h_addr_list to in_addr , since h_addr_list also has the ip address in long format only
+    server_addr.sin_addr =  *((struct in_addr **) hostServer->h_addr_list)[0];
 
     // Criando estrutura de addr do servidor
     struct sockaddr_in server_addr;
@@ -47,10 +35,10 @@ bool TCP_Client::connectToHost(std::string hostName) {
 
     // Iniciando a conexao
     if(connect(sockin, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
-        std::cerr << "Erro na tentativa de conexao com o host: " << hostName << std::endl;
+        std::cerr << "Erro na tentativa de conexao com o host: " << hostName  << std::endl;
         return false;
     }
-    std::cout << "Conexao realizada com o host: " << hostName << std::endl;
+    std::cout << "Conexao realizada com o host: " << hostName  << std::endl;
     return true;
 }
 

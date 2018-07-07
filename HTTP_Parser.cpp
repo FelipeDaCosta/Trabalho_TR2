@@ -5,7 +5,7 @@ std::string getHostFromRequest(std::string request) {
     std::string line;
     std::getline(strStream, line); // pega primeira linha e nao faz nada
     std::getline(strStream, line); // Pega segunda linha com o host
-    return line.substr(6, line.size() - 6);
+    return line.substr(6, line.size() - 7);
 }
 
 std::string getURLFromRequest(std::string request) {
@@ -13,7 +13,7 @@ std::string getURLFromRequest(std::string request) {
     std::string line;
     std::getline(strStream, line);
     // Substring tirando o GET inicial e a versao do HTTP no final
-    return line.substr(4, line.size() - (4 + 9));
+    return line.substr(4, line.size() - (5 + 9));
 }
 
 std::string buildRequest(std::string hostName, std::string URL) {
