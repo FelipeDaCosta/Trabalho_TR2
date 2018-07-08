@@ -13,11 +13,12 @@
 #include "HTTP_Parser.h"
 #include "TCP_Client.h"
 
-int main(int argc, char *argv[]) {  
+int main(int argc, char *argv[]) {
     TCP_Client *client = new TCP_Client(80);
     int sockfd, newsockfd, portno;
     socklen_t clilen;
-    char buffer[1048576];
+    const int SIZE_OF_BUFFER = 2097152;
+    char buffer[SIZE_OF_BUFFER];
     struct sockaddr_in serv_addr, cli_addr;
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -39,13 +40,25 @@ int main(int argc, char *argv[]) {
     }
     listen(sockfd, 10);
     clilen = sizeof(cli_addr);
-    newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-    read(newsockfd, buffer, 4095);
-    std::string host = getHostFromRequest(std::string(buffer));
-    client->connectToHost(host);
-    client->sendRequest(buildRequest(host));
-    std::string request = client->getResponse();
-    write(newsockfd, request.c_str(), request.size());
+    std::cout << "Ouvindo na porta " << portno << std::endl;
+    while(true) {
+        newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+        recv(newsockfd, buffer, SIZE_OF_BUFFER, 0);
+        std::string request(buffer);
+        std::cout << "-------------" << std::endl;
+        std::cout << "Recebido request:" << std::endl;
+        std::cout << request << std::endl;
+        std::cout << "-------------" << std::endl;
+        std::string httpMethod = getHTTPMethod(request);
+        if(httpMethod == "GET") {
+            std::string host = getHostFromRequest(request);
+            if(client->connectToHost(host)) {
+                client->sendRequest(buildRequest(host));
+                std::string reply = client->getResponse();
+                write(newsockfd, reply.c_str(), reply.size());
+            }
+        }
+    }
     close(newsockfd);
     close(sockfd);
     return 0;

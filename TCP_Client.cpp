@@ -13,6 +13,10 @@ TCP_Client::TCP_Client(int portNo) : port(portNo),
     }
 }
 
+TCP_Client::~TCP_Client() {
+    close(sockin);
+}
+
 bool TCP_Client::connectToHost(std::string hostName) {
     struct hostent *hostServer;
     hostServer = gethostbyname(hostName.c_str());
@@ -57,4 +61,13 @@ std::string TCP_Client::getResponse(int bufferSize) {
         response += buffer;
     }
     return response;
+}
+
+std::string TCP_Client::get(std::string host) {
+    std::cout << "USING GET" << std::endl;
+    if(connectToHost(host)) {
+        sendRequest(buildRequest(host));
+        return getResponse();
+    }
+    std::cout << "FINISH GET" << std::endl;
 }

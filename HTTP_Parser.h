@@ -10,4 +10,6 @@ std::string getURLFromRequest(std::string request);
 
 std::string buildRequest(std::string hostName, std::string URL="/");
 
+std::string getHTTPMethod(std::string request);
+
 #endif
