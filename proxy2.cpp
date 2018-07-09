@@ -43,20 +43,26 @@ int main(int argc, char *argv[]) {
     std::cout << "Ouvindo na porta " << portno << std::endl;
     while(true) {
         newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-        recv(newsockfd, buffer, SIZE_OF_BUFFER, 0);
-        std::string request(buffer);
-        std::cout << "-------------" << std::endl;
-        std::cout << "Recebido request:" << std::endl;
-        std::cout << request << std::endl;
-        std::cout << "-------------" << std::endl;
-        std::string httpMethod = getHTTPMethod(request);
-        if(httpMethod == "GET") {
-            std::string host = getHostFromRequest(request);
-            if(client->connectToHost(host)) {
-                client->sendRequest(buildRequest(host));
-                std::string reply = client->getResponse();
-                write(newsockfd, reply.c_str(), reply.size());
+        if(newsockfd < 0)
+            continue;
+        pid_t pid = fork();
+        if(pid == 0) {
+            recv(newsockfd, buffer, SIZE_OF_BUFFER, 0);
+            std::string request(buffer);
+            std::cout << "-------------" << std::endl;
+            std::cout << "Recebido request:" << std::endl;
+            std::cout << request << std::endl;
+            std::string httpMethod = getHTTPMethod(request);
+            if(httpMethod == "GET" && request.find("firefox") == std::string::npos) {
+                std::string host = getHostFromRequest(request);
+                if(client->connectToHost(host)) {
+                    client->sendRequest(addHeader(request, "Connection: close"));
+                    std::string reply = client->getResponse();
+                    write(newsockfd, reply.c_str(), reply.size());
+                }
             }
+            close(newsockfd);
+            _exit(0);
         }
     }
     close(newsockfd);
