@@ -22,6 +22,8 @@ int serverSocket(std::string host, std::string request, int client);
 
 int requestAndForward(int sock);
 
+std::string getResponseFromHost(int connectedSocket, bool verbose=false);
+
 int sendRequestToHost(std::string host, std::string request);
 
 int forwardMessage(int socketToRead, int socketToForward);
@@ -29,5 +31,7 @@ int forwardMessage(int socketToRead, int socketToForward);
 int startProxy(int port);
 
 int runProxy(int sockServer);
+
+int getRequestAndForward(int sockBrowser, bool verbose=false);
 
 #endif //REQUESTS_H

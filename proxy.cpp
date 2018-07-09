@@ -29,26 +29,30 @@ int sendRequestToHost(std::string host, std::string request) {
     return sockClient;
 }
 
-// Le a mensagem no socket usado para fazer o pedido (socketToRead)
-// e reenvia a mensagem para o socket do browser (socketToForward)
-int forwardMessage(int socketToRead, int socketToForward) {
-	// Lendo a resposta do host
+// Faz a leitura de um socket (ja conectado) e retorna o resulado
+std::string getResponseFromHost(int connectedSocket, bool verbose) {
 	const int SIZE_OF_BUFFER = 524288;
 	char buffer[SIZE_OF_BUFFER];
 	int recv_size, total_recv_size = 0;
-	while((recv_size = recv(socketToRead, buffer + total_recv_size, SIZE_OF_BUFFER - total_recv_size, 0)) > 0){
-		std::cout << "Recebeu mensagem de tamanho " << recv_size << std::endl;
+	while((recv_size = recv(connectedSocket, buffer + total_recv_size, SIZE_OF_BUFFER - total_recv_size, 0)) > 0){
+		if(verbose)
+			std::cout << "Recebeu mensagem de tamanho " << recv_size << std::endl;
 		total_recv_size += recv_size;
 	}
-	std::cout << " Finalizou de receber a resposta de tamanho total: " << total_recv_size << std::endl;
-	
-	// Enviando a resposta do host de volta para o browser
-	std::string reply(buffer);
+	if(verbose)
+		std::cout << " Finalizou de receber a resposta de tamanho total: " << total_recv_size << std::endl;
+	return std::string(buffer);
+}
+
+// Le a mensagem no socket usado para fazer o pedido (socketToRead)
+// e reenvia a mensagem para o socket do browser (socketToForward)
+int forwardMessage(int socketToRead, int socketToForward) {
+	std::string reply = getResponseFromHost(socketToRead);
 	send(socketToForward, reply.c_str(), reply.size(), 0);
 	return socketToForward;
 }
 
-int requestAndForward(int sockBrowser){
+int getRequestAndForward(int sockBrowser, bool verbose){
 	const int BUFFER_SIZE = 32768;
 	char buffer[BUFFER_SIZE];
 	recv(sockBrowser, buffer, BUFFER_SIZE, 0);
@@ -56,8 +60,9 @@ int requestAndForward(int sockBrowser){
 	std::string newReq(buffer);
 	std::string method = getHTTPMethod(newReq);
 	if(method != "GET"){
-		std::cout << "Proxy nao suporta metodo " << method << std::endl; 
-		exit(0);
+		if(verbose)
+			std::cout << "Proxy nao suporta metodo " << method << std::endl; 
+		exit(0); // Sai do novo processo
 	}
 	
 	
@@ -125,7 +130,7 @@ int runProxy(int sockServer) {
 		int newsockfd = accept(sockServer, &cli_addr, (socklen_t*) &clilen);
     	pid_t pid = fork();
     	if(pid == 0){
-			requestAndForward(newsockfd);
+			getRequestAndForward(newsockfd);
 			_exit(0);
 		}
 		close(newsockfd);
