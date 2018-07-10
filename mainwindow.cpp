@@ -1,7 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "proxythread.h"
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -15,8 +13,7 @@ MainWindow::MainWindow(QWidget *parent) :
 //    std::cout << "Aracne iniciado, ouvindo na porta " << portNo << std::endl;
 //    runProxy(sockServer);
 //    ::close(sockServer);
-    ProxyThread th(parent, portNo);
-    th.Start();
+    prThread.Start();
 }
 
 MainWindow::~MainWindow()

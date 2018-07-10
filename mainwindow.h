@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+#include "proxythread.h"
+
 namespace Ui {
 class MainWindow;
 }
@@ -17,6 +19,7 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    ProxyThread prThread;
 };
 
 #endif // MAINWINDOW_H
