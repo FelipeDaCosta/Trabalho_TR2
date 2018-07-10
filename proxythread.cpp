@@ -1,4 +1,5 @@
 #include "proxythread.h"
+#include <QtCore>
 
 int ProxyThread::sendRequestToHost(std::string host, std::string request) {
     struct addrinfo hints;
@@ -32,59 +33,88 @@ int ProxyThread::sendRequestToHost(std::string host, std::string request) {
 // Le a mensagem no socket usado para fazer o pedido (socketToRead)
 // e reenvia a mensagem para o socket do browser (socketToForward)
 int ProxyThread::forwardMessage(int socketToRead, int socketToForward) {
-    // Lendo a resposta do host
-    const int SIZE_OF_BUFFER = 524288;
-    char buffer[SIZE_OF_BUFFER];
-    int recv_size, total_recv_size = 0;
-    while((recv_size = recv(socketToRead, buffer + total_recv_size, SIZE_OF_BUFFER - total_recv_size, 0)) > 0){
-        std::cout << "Recebeu mensagem de tamanho " << recv_size << std::endl;
-        total_recv_size += recv_size;
-    }
-    std::cout << " Finalizou de receber a resposta de tamanho total: " << total_recv_size << std::endl;
+    if (!lockReply) {
+        lockReply =  true;
+        // Lendo a resposta do host
+        const int SIZE_OF_BUFFER = 524288;
+        char buffer[SIZE_OF_BUFFER];
+        int recv_size, total_recv_size = 0;
+        while((recv_size = recv(socketToRead, buffer + total_recv_size, SIZE_OF_BUFFER - total_recv_size, 0)) > 0){
+            std::cout << "Recebeu mensagem de tamanho " << recv_size <<"/n";
+            total_recv_size += recv_size;
+        }
+        std::cout << " Finalizou de receber a resposta de tamanho total: " << total_recv_size << std::endl;
 
-    // Enviando a resposta do host de volta para o browser
-    std::string reply(buffer);
-    send(socketToForward, reply.c_str(), reply.size(), 0);
-    emit sendReply(reply);
-    return socketToForward;
+        // Enviando a resposta do host de volta para o browser
+        std::string reply(buffer);
+
+        std::cout << "REPLY SENT TO PROXY"  << std::endl;
+        emit sendReply(QString::fromStdString(reply));
+        socketForward = socketToForward;
+
+        std::cout << "DOOR:" << socketForward << std::endl;
+    }
+}
+
+void ProxyThread::finishReply(QString rep)
+{
+    std::string reply = rep.toStdString();
+    std::cout << "FINISH REPLY AT "<< socketForward << std::endl;
+    send(socketForward, reply.c_str(), reply.size(), 0);
+    lockRequest = false;
+    lockReply = false;
+
+    close(socketBrowser);
+    close(socketForward);
 }
 
 int ProxyThread::requestAndForward(int sockBrowser){
-    const int BUFFER_SIZE = 32768;
-    char buffer[BUFFER_SIZE];
-    recv(sockBrowser, buffer, BUFFER_SIZE, 0);
+    if (!lockRequest) {
+        lockRequest = true;
+        const int BUFFER_SIZE = 32768;
+        char buffer[BUFFER_SIZE];
+        recv(sockBrowser, buffer, BUFFER_SIZE, 0);
 
-    std::string  newReq(buffer);
-    std::string method = getHTTPMethod(newReq);
-    if(method != "GET"){
-        std::cout << "Proxy nao suporta metodo " << method << std::endl;
-        exit(0);
+        std::string newReq(buffer);
+        std::string method = getHTTPMethod(newReq);
+        if(method != "GET"){
+            std::cout << "Proxy nao suporta metodo " << method << std::endl;
+            exit(0);
+        }
+
+        std::string host = getHostFromRequest(newReq);
+        // Funciona melhor assim
+        newReq = replaceHeader(newReq, "Accept-Encoding: ", "identity");
+        newReq = replaceHeader(newReq, "Connection: ", "close");
+        // Alguns sites dao problema quando a url vai com o host
+        newReq = fixRequestURL(newReq);
+
+
+        std::cout << "REQUEST SENT TO PROXY AT " << sockBrowser << std::endl;
+        emit sendRequest(QString::fromStdString(newReq));
+
+        reqHost = host;
+        socketBrowser = sockBrowser;
     }
+}
 
-    std::string host = getHostFromRequest(newReq);
-    // Funciona melhor assim
-    newReq = replaceHeader(newReq, "Accept-Encoding: ", "identity");
-    newReq = replaceHeader(newReq, "Connection: ", "close");
-    // Alguns sites dao problema quando a url vai com o host
-    newReq = fixRequestURL(newReq);
-
-
-    emit sendRequest(newReq);
-
+void ProxyThread::finishRequest(QString req)
+{
+    std::string request = req.toStdString();
+    std::cout << "FINISH REQUEST" << std::endl;
     // Faz um pedido para o host e retorna a socket qe fez o pedido
-    int sockClient = sendRequestToHost(host, newReq);
-    forwardMessage(sockClient, sockBrowser);
-    close(sockBrowser);
-    close(sockClient);
-
-    // Manda o request
-    return 0;
+    int sockClient = sendRequestToHost(reqHost, request);
+    std::cout << "REQUEST TO SERVER" << std::endl;
+    lockReply = false;
+    forwardMessage(sockClient, socketBrowser);
 }
 
 ProxyThread::ProxyThread(QObject *parent, int port)
 {
     restart = false;
     abort = false;
+    lockRequest = false;
+    lockReply = false;
 
     // Structs sockaddr servidor
     struct sockaddr_in serv_addr;
@@ -148,15 +178,17 @@ void ProxyThread::Start()
 void ProxyThread::run()
 {
     forever {
+        QCoreApplication::processEvents();
         mutex.lock();
-
-        int newsockfd = accept(sockServer, &cli_addr, (socklen_t*) &clilen);
-//        pid_t pid = fork();
-//        if(pid == 0){
+        if (!lockRequest && !lockReply) {
+            int newsockfd = accept(sockServer, &cli_addr, (socklen_t*) &clilen);
+    //        pid_t pid = fork();
+    //        if(pid == 0){
             requestAndForward(newsockfd);
-//            _exit(0);
-//        }
-        close(newsockfd);
+    //            _exit(0);
+    //        }
+//            close(newsockfd);
+        }
 
         if (abort) {
             return;

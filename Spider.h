@@ -2,8 +2,8 @@
 #include <regex>
 #include <vector>
 
-#include "TCP_Client.h"
 #include "HTTP_Parser.h"
+#include "proxy.h"
 
 #ifndef SPIDER_H
 #define SPIDER_H

@@ -30,6 +30,9 @@ public:
     ~ProxyThread();
     void Start();
 
+    void finishRequest(QString request);
+    void finishReply(QString reply);
+
 protected:
     void run() override;
 
@@ -38,10 +41,16 @@ private:
     QWaitCondition condition;
     bool restart;
     bool abort;
+    bool lockRequest, lockReply;
 
     struct sockaddr cli_addr;
     socklen_t clilen = sizeof(cli_addr);
     int sockServer;
+
+    std::string reqHost;
+    std::string request;
+    int socketBrowser;
+    int socketForward;
 
     int serverSocket(std::string host, std::string request, int client);
     int requestAndForward(int sock);
@@ -51,8 +60,8 @@ private:
     int startProxy(int port);
 
 signals:
-    void sendRequest(std::string request);
-    void sendReply(std::string reply);
+    void sendRequest(QString request);
+    void sendReply(QString reply);
 };
 
 #endif // PROXYTHREAD_H

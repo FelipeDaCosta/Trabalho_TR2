@@ -62,7 +62,7 @@ int getRequestAndForward(int sockBrowser, bool verbose){
 	if(method != "GET"){
 		if(verbose)
 			std::cout << "Proxy nao suporta metodo " << method << std::endl; 
-		exit(0); // Sai do novo processo
+//		exit(0); // Sai do novo processo
 	}
 	
 	

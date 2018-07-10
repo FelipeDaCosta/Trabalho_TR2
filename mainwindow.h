@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QStringListModel>
+#include <QPlainTextEdit>
 
 #include "proxythread.h"
 
@@ -24,15 +24,24 @@ private:
     Ui::MainWindow *ui;
     ProxyThread prThread;
 
-    QStringList requestList;
-    QStringList replyList;
-    QStringList requestShortList;
-    QStringList replyShortList;
+    QString request;
+    QString reply;
 
-    QStringListModel *requestModel;
-    QStringListModel *replyModel;
+    QPlainTextEdit* requestEdit;
+    QPlainTextEdit* replyEdit;
+
+    bool letItGo;
+    bool requestUp;
+    bool replyUp;
 
     void alertChange();
+
+    void setReply(QString reply);
+    void setRequest(QString request);
+
+signals:
+    void sendNewReply(QString reply);
+    void sendNewRequest(QString request);
 };
 
 #endif // MAINWINDOW_H

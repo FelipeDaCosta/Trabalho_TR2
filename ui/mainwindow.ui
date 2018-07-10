@@ -98,10 +98,10 @@
      <widget class="QWidget" name="editWidget" native="true">
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QTextEdit" name="requestEdit"/>
+        <widget class="QPlainTextEdit" name="requestEdit"/>
        </item>
        <item>
-        <widget class="QTextEdit" name="replyEdit"/>
+        <widget class="QPlainTextEdit" name="replyEdit"/>
        </item>
       </layout>
      </widget>
