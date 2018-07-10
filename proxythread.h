@@ -49,6 +49,10 @@ private:
     int forwardMessage(int socketToRead, int socketToForward);
 
     int startProxy(int port);
+
+signals:
+    void sendRequest(std::string request);
+    void sendReply(std::string reply);
 };
 
 #endif // PROXYTHREAD_H

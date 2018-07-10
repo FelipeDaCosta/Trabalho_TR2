@@ -45,6 +45,7 @@ int ProxyThread::forwardMessage(int socketToRead, int socketToForward) {
     // Enviando a resposta do host de volta para o browser
     std::string reply(buffer);
     send(socketToForward, reply.c_str(), reply.size(), 0);
+    emit sendReply(reply);
     return socketToForward;
 }
 
@@ -53,16 +54,14 @@ int ProxyThread::requestAndForward(int sockBrowser){
     char buffer[BUFFER_SIZE];
     recv(sockBrowser, buffer, BUFFER_SIZE, 0);
 
-    std::string newReq(buffer);
+    std::string  newReq(buffer);
     std::string method = getHTTPMethod(newReq);
     if(method != "GET"){
         std::cout << "Proxy nao suporta metodo " << method << std::endl;
         exit(0);
     }
 
-
     std::string host = getHostFromRequest(newReq);
-    std::string requestMethod = getHTTPMethod(newReq);
     // Funciona melhor assim
     newReq = replaceHeader(newReq, "Accept-Encoding: ", "identity");
     newReq = replaceHeader(newReq, "Connection: ", "close");
@@ -70,11 +69,15 @@ int ProxyThread::requestAndForward(int sockBrowser){
     newReq = fixRequestURL(newReq);
 
 
+    emit sendRequest(newReq);
+
     // Faz um pedido para o host e retorna a socket qe fez o pedido
     int sockClient = sendRequestToHost(host, newReq);
     forwardMessage(sockClient, sockBrowser);
     close(sockBrowser);
     close(sockClient);
+
+    // Manda o request
     return 0;
 }
 
@@ -148,11 +151,11 @@ void ProxyThread::run()
         mutex.lock();
 
         int newsockfd = accept(sockServer, &cli_addr, (socklen_t*) &clilen);
-        pid_t pid = fork();
-        if(pid == 0){
+//        pid_t pid = fork();
+//        if(pid == 0){
             requestAndForward(newsockfd);
-            _exit(0);
-        }
+//            _exit(0);
+//        }
         close(newsockfd);
 
         if (abort) {

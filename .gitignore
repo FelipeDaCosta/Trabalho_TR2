@@ -1,2 +1,4 @@
 aracne
 *.o
+*.user
+*.directory
