@@ -1,4 +1,7 @@
 #include "Spider.h"
+#include "HTTP_Parser.h"
+
+#include <iostream>
 
 std::string getHtmlFromHost(std::string host, std::string URL) {
     int sockfd = sendRequestToHost(host, buildRequest(host, URL));

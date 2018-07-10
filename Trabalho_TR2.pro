@@ -26,18 +26,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-        proxy.cpp \
         HTTP_Parser.cpp \
         TCP_Client.cpp \
-        Spider.cpp \
     proxythread.cpp
 
 HEADERS += \
         mainwindow.h \
-        proxy.h \
         HTTP_Parser.h \
         TCP_Client.h \
-        Spider.h \
     proxythread.h
 
 FORMS += \

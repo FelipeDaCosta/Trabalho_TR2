@@ -34,6 +34,9 @@ private:
     bool requestUp;
     bool replyUp;
 
+    bool hasToRequest;
+    bool hasToReply;
+
     void alertChange();
 
     void setReply(QString reply);
