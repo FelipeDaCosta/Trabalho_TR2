@@ -43,7 +43,7 @@ int ProxyThread::forwardMessage(int socketToRead, int socketToForward) {
             std::cout << "Recebeu mensagem de tamanho " << recv_size <<"/n";
             total_recv_size += recv_size;
         }
-        std::cout << " Finalizou de receber a resposta de tamanho total: " << total_recv_size << std::endl;
+        std::cout << " Finalizou de receber a resposta de tamanho total: " << total_recv_size << "\n";
 
         // Enviando a resposta do host de volta para o browser
         std::string reply(buffer);
@@ -79,22 +79,23 @@ int ProxyThread::requestAndForward(int sockBrowser){
         std::string method = getHTTPMethod(newReq);
         if(method != "GET"){
             std::cout << "Proxy nao suporta metodo " << method << std::endl;
-            exit(0);
+            close(sockBrowser);
+        } else {
+
+            std::string host = getHostFromRequest(newReq);
+            // Funciona melhor assim
+            newReq = replaceHeader(newReq, "Accept-Encoding: ", "identity");
+            newReq = replaceHeader(newReq, "Connection: ", "close");
+            // Alguns sites dao problema quando a url vai com o host
+            newReq = fixRequestURL(newReq);
+
+
+            std::cout << "REQUEST SENT TO PROXY AT " << sockBrowser << std::endl;
+            emit sendRequest(QString::fromStdString(newReq));
+
+            reqHost = host;
+            socketBrowser = sockBrowser;
         }
-
-        std::string host = getHostFromRequest(newReq);
-        // Funciona melhor assim
-        newReq = replaceHeader(newReq, "Accept-Encoding: ", "identity");
-        newReq = replaceHeader(newReq, "Connection: ", "close");
-        // Alguns sites dao problema quando a url vai com o host
-        newReq = fixRequestURL(newReq);
-
-
-        std::cout << "REQUEST SENT TO PROXY AT " << sockBrowser << std::endl;
-        emit sendRequest(QString::fromStdString(newReq));
-
-        reqHost = host;
-        socketBrowser = sockBrowser;
     }
 }
 
